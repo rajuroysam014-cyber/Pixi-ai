@@ -118,8 +118,7 @@ if prompt:
         "role": "user",
         "parts": [{"text": prompt}]
     })
-
-   with st.chat_message("assistant"):
+with st.chat_message("assistant"):
     with st.spinner("Pixi ভাবছে..."):
         try:
             models = [
