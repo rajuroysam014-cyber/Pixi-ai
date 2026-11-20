@@ -1,57 +1,58 @@
-# Pixi AI — Personal Text Assistant
+✦ Pixi AI — Personal Text Assistant
 
-A simple bilingual (Bangla + English) text-to-text AI chat app built with Streamlit and the OpenAI Responses API.
+A simple bilingual (Bangla + English) text-to-text AI chat app built with Streamlit and the Google Gemini API.
 
-## What it includes
+What it includes
+
 - Bangla and English conversations
 - Context carried across turns in the current chat
 - New chat button
-- Selectable model
-- API key kept outside the source code
+- Powered by Google Gemini
+- Gemini API key kept outside the source code
 
-## Requirements
+Requirements
+
 - Python 3.10+
-- An OpenAI API key with API billing/credits enabled
+- A Google Gemini API key
 - Internet connection
 
-## Run on Windows / macOS / Linux
+Run on Windows / macOS / Linux
 
 1. Install Python 3.10 or newer.
-2. Extract this ZIP and open a terminal in the `pixi_ai` folder.
+
+2. Download or extract this project and open a terminal in the "pixi_ai" folder.
+
 3. Install dependencies:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+pip install -r requirements.txt
 
-4. Set your API key.
+4. Set your Gemini API key.
 
-   **Windows PowerShell**
-   ```powershell
-   $env:OPENAI_API_KEY="your_api_key_here"
-   ```
+Windows PowerShell
 
-   **macOS / Linux**
-   ```bash
-   export OPENAI_API_KEY="your_api_key_here"
-   ```
+$env:GEMINI_API_KEY="your_gemini_api_key_here"
+
+macOS / Linux
+
+export GEMINI_API_KEY="your_gemini_api_key_here"
 
 5. Start Pixi AI:
 
-   ```bash
-   streamlit run app.py
-   ```
+streamlit run app.py
 
-6. The app opens in your browser, usually at `http://localhost:8501`.
+6. The app opens in your browser, usually at "http://localhost:8501".
 
-## API key safety
-- Never share your API key or upload it publicly.
-- Do not paste the key into `app.py`.
-- API usage may cost money. Set a usage limit/budget in your API account.
-- Chat messages are sent to the API provider to generate responses.
+API Key Safety
 
-## Notes
-- This starter version keeps chat history in Streamlit's current session only.
+- Never share your Gemini API key.
+- Do not upload your API key publicly.
+- Do not paste the key into "app.py".
+- API usage may cost money. Check your Google AI Studio usage limits.
+- Chat messages are sent to Google Gemini to generate responses.
+
+Notes
+
+- Chat history stays in Streamlit's current session only.
 - Starting a new chat clears the current conversation context.
-- The app does not have voice, web browsing, file upload, or permanent memory yet.
-- If a model is unavailable to your API account, choose another model available to your account in the sidebar.
+- This version is text-only.
+- The app does not have voice, web browsing, file upload, or permanent memory.
