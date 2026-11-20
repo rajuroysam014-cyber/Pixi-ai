@@ -1,13 +1,12 @@
-
 import os
 import streamlit as st
 from google import genai
 from google.genai import types
 
 st.set_page_config(
-    page_title="Pixi AI",
-    page_icon="✦",
-    layout="centered"
+page_title="Pixi AI",
+page_icon="✦",
+layout="centered"
 )
 
 SYSTEM_PROMPT = """
@@ -27,126 +26,109 @@ You are text-only. Never claim to have voice features or access to the user's de
 """
 
 st.markdown("""
-<style>
-    .stApp {
-        max-width: 900px;
-        margin: auto;
-    }
-    [data-testid="stChatMessage"] {
-        border-radius: 14px;
-    }
-    .hero {
-        padding: 18px 4px 8px 4px;
-    }
-    .hero h1 {
-        margin-bottom: 0;
-    }
-    .muted {
-        color: #888;
-        font-size: .92rem;
-    }
-</style>
+
 """, unsafe_allow_html=True)
 
-# Sidebar
+Sidebar
 with st.sidebar:
-    st.title("✦ Pixi AI")
-    st.caption("Your personal text assistant")
-    st.caption("Model: Gemini 3.8 Flash")
-    st.divider()
+st.title("✦ Pixi AI")
+st.caption("Your personal text assistant")
+st.caption("Model: Gemini 3.8 Flash")
+st.divider()
 
-    st.markdown("**Settings**")
 
-    if st.button("＋ New chat", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
+st.markdown("**Settings**")
 
-    st.caption("Chat history stays in this browser session only.")
-    st.caption("Powered by Google Gemini.")
-
-# Initialize chat history
-if "messages" not in st.session_state:
+if st.button("＋ New chat", use_container_width=True):
     st.session_state.messages = []
+    st.rerun()
 
-# Header
+st.caption("Chat history stays in this browser session only.")
+st.caption("Powered by Google Gemini.")
+
+Initialize chat history
+if "messages" not in st.session_state:
+st.session_state.messages = []
+
+Header
 st.markdown(
-    '<div class="hero"><h1>✦ Pixi AI</h1>'
-    '<div class="muted">বাংলা ও English — ask anything.</div></div>',
-    unsafe_allow_html=True
+'✦ Pixi AI'
+'বাংলা ও English — ask anything.',
+unsafe_allow_html=True
 )
 
-# Read Gemini API key
+Read Gemini API key
 try:
-    api_key = st.secrets.get("GEMINI_API_KEY", None)
+api_key = st.secrets.get("GEMINI_API_KEY", None)
 except Exception:
-    api_key = None
+api_key = None
 
 api_key = api_key or os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    st.warning(
-        "শুরু করতে Gemini API Key যোগ করতে হবে। "
-        "Streamlit Secrets-এ GEMINI_API_KEY সেট করুন।"
-    )
-    st.stop()
+st.warning(
+"শুরু করতে Gemini API Key যোগ করতে হবে। "
+"Streamlit Secrets-এ GEMINI_API_KEY সেট করুন।"
+)
+st.stop()
 
-# Initialize Gemini
+Initialize Gemini
 client = genai.Client(api_key=api_key)
 
-# Display previous messages
+Display previous messages
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+with st.chat_message(msg["role"]):
+st.markdown(msg["content"])
 
-# Chat input
+Chat input
 prompt = st.chat_input("এখানে লিখুন... / Type your message...")
 
 if prompt:
-    with st.chat_message("user"):
-        st.markdown(prompt)
+with st.chat_message("user"):
+st.markdown(prompt)
 
-    # Prepare conversation history
-    contents = []
 
-    for msg in st.session_state.messages:
-        role = "user" if msg["role"] == "user" else "model"
-        contents.append({
-            "role": role,
-            "parts": [{"text": msg["content"]}]
-        })
+# Prepare conversation history
+contents = []
 
+for msg in st.session_state.messages:
+    role = "user" if msg["role"] == "user" else "model"
     contents.append({
-        "role": "user",
-        "parts": [{"text": prompt}]
+        "role": role,
+        "parts": [{"text": msg["content"]}]
     })
 
-    with st.chat_message("assistant"):
-        with st.spinner("Pixi ভাবছে..."):
-            try:
-                response = client.models.generate_content(
-                    model="gemini-3.8-flash",
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                        max_output_tokens=2500
-                    )
+contents.append({
+    "role": "user",
+    "parts": [{"text": prompt}]
+})
+
+with st.chat_message("assistant"):
+    with st.spinner("Pixi ভাবছে..."):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.8-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    max_output_tokens=2500
                 )
+            )
 
-                answer = response.text or "দুঃখিত, এবার কোনো উত্তর পাওয়া যায়নি।"
+            answer = response.text or "দুঃখিত, এবার কোনো উত্তর পাওয়া যায়নি।"
 
-                st.markdown(answer)
+            st.markdown(answer)
 
-                st.session_state.messages.append({
-                    "role": "user",
-                    "content": prompt
-                })
+            st.session_state.messages.append({
+                "role": "user",
+                "content": prompt
+            })
 
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": answer
-                })
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": answer
+            })
 
-            except Exception as e:
-                st.error("সমস্যা হয়েছে। Gemini API Key ও Model Access পরীক্ষা করুন।")
-                st.caption(str(e))
-
+        except Exception as e:
+            st.error("সমস্যা হয়েছে। Gemini API Key ও Model Access পরীক্ষা করুন।")
+            st.caption(str(e))
