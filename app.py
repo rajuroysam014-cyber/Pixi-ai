@@ -1,14 +1,17 @@
 import os
+import time
 import streamlit as st
 from google import genai
 from google.genai import types
 
+# Page settings
 st.set_page_config(
     page_title="Pixi AI",
     page_icon="✦",
     layout="centered"
 )
 
+# System instructions
 SYSTEM_PROMPT = """
 You are Pixi AI, a capable, thoughtful personal AI assistant.
 You can communicate fluently in Bangla and English.
@@ -25,6 +28,7 @@ For current facts, say when information may be outdated unless live browsing is 
 You are text-only. Never claim to have voice features or access to the user's device/files.
 """
 
+# Custom CSS
 st.markdown("""
 <style>
     .stApp {
@@ -51,7 +55,7 @@ st.markdown("""
 with st.sidebar:
     st.title("✦ Pixi AI")
     st.caption("Your personal text assistant")
-    st.caption("Model: Gemini 3.8 Flash")
+    st.caption("Model: Gemini Flash")
     st.divider()
 
     st.markdown("**Settings**")
@@ -74,7 +78,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Read Gemini API key
+# Read API key
 try:
     api_key = st.secrets.get("GEMINI_API_KEY", None)
 except Exception:
@@ -89,7 +93,7 @@ if not api_key:
     )
     st.stop()
 
-# Initialize Gemini
+# Initialize Gemini client
 client = genai.Client(api_key=api_key)
 
 # Display previous messages
@@ -101,6 +105,8 @@ for msg in st.session_state.messages:
 prompt = st.chat_input("এখানে লিখুন... / Type your message...")
 
 if prompt:
+
+    # Display user message
     with st.chat_message("user"):
         st.markdown(prompt)
 
@@ -109,6 +115,7 @@ if prompt:
 
     for msg in st.session_state.messages:
         role = "user" if msg["role"] == "user" else "model"
+
         contents.append({
             "role": role,
             "parts": [{"text": msg["content"]}]
@@ -118,19 +125,25 @@ if prompt:
         "role": "user",
         "parts": [{"text": prompt}]
     })
-with st.chat_message("assistant"):
-    with st.spinner("Pixi ভাবছে..."):
-        try:
+
+    # Assistant response
+    with st.chat_message("assistant"):
+
+        with st.spinner("Pixi ভাবছে..."):
+
             models = [
                 "gemini-3.8-flash",
                 "gemini-3.5-flash-lite"
             ]
 
-            response = None
+            answer = None
             last_error = None
 
             for model in models:
+
+                # Retry up to 2 times per model
                 for attempt in range(2):
+
                     try:
                         response = client.models.generate_content(
                             model=model,
@@ -142,45 +155,63 @@ with st.chat_message("assistant"):
                         )
 
                         if response.text:
+                            answer = response.text
                             break
 
+                        last_error = Exception(
+                            "Gemini কোনো text response দেয়নি।"
+                        )
+                        break
+
                     except Exception as e:
+
                         last_error = e
                         error_text = str(e).upper()
 
-                        if "503" in error_text or "UNAVAILABLE" in error_text:
+                        # Retry or switch model for temporary errors
+                        if (
+                            "503" in error_text
+                            or "UNAVAILABLE" in error_text
+                            or "404" in error_text
+                            or "NOT_FOUND" in error_text
+                        ):
+
                             if attempt == 0:
                                 time.sleep(3)
                                 continue
-                            break
-                        else:
-                            raise
 
-                if response is not None and response.text:
+                            break
+
+                        else:
+                            st.error(
+                                "Gemini API-তে সমস্যা হয়েছে।"
+                            )
+                            st.caption(str(e))
+                            break
+
+                if answer:
                     break
 
-            if response is None or not response.text:
+            # Show final answer
+            if answer:
+
+                st.markdown(answer)
+
+                st.session_state.messages.append({
+                    "role": "user",
+                    "content": prompt
+                })
+
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": answer
+                })
+
+            else:
+
+                st.error(
+                    "দুঃখিত! Pixi এখন উত্তর দিতে পারছে না।"
+                )
+
                 if last_error:
-                    raise last_error
-                raise Exception("Gemini থেকে কোনো উত্তর পাওয়া যায়নি।")
-
-            answer = response.text
-
-            st.markdown(answer)
-
-            st.session_state.messages.append({
-                "role": "user",
-                "content": prompt
-            })
-
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": answer
-            })
-
-        except Exception as e:
-            st.error("Pixi এখন উত্তর দিতে পারছে না। একটু পরে আবার চেষ্টা করুন।")
-            st.caption(str(e))
-            Exception as e:
-                st.error("সমস্যা হয়েছে। Gemini API Key ও Model Access পরীক্ষা করুন।")
-                st.caption(str(e))
+                    st.caption(str(last_error))
