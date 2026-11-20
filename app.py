@@ -119,32 +119,69 @@ if prompt:
         "parts": [{"text": prompt}]
     })
 
-    with st.chat_message("assistant"):
-        with st.spinner("Pixi ভাবছে..."):
-            try:
-                response = client.models.generate_content(
-                    model="gemini-3.8-flash",
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                        max_output_tokens=2500
-                    )
-                )
+   with st.chat_message("assistant"):
+    with st.spinner("Pixi ভাবছে..."):
+        try:
+            models = [
+                "gemini-3.8-flash",
+                "gemini-3.5-flash-lite"
+            ]
 
-                answer = response.text or "দুঃখিত, এবার কোনো উত্তর পাওয়া যায়নি।"
+            response = None
+            last_error = None
 
-                st.markdown(answer)
+            for model in models:
+                for attempt in range(2):
+                    try:
+                        response = client.models.generate_content(
+                            model=model,
+                            contents=contents,
+                            config=types.GenerateContentConfig(
+                                system_instruction=SYSTEM_PROMPT,
+                                max_output_tokens=2500
+                            )
+                        )
 
-                st.session_state.messages.append({
-                    "role": "user",
-                    "content": prompt
-                })
+                        if response.text:
+                            break
 
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": answer
-                })
+                    except Exception as e:
+                        last_error = e
+                        error_text = str(e).upper()
 
-            except Exception as e:
+                        if "503" in error_text or "UNAVAILABLE" in error_text:
+                            if attempt == 0:
+                                time.sleep(3)
+                                continue
+                            break
+                        else:
+                            raise
+
+                if response is not None and response.text:
+                    break
+
+            if response is None or not response.text:
+                if last_error:
+                    raise last_error
+                raise Exception("Gemini থেকে কোনো উত্তর পাওয়া যায়নি।")
+
+            answer = response.text
+
+            st.markdown(answer)
+
+            st.session_state.messages.append({
+                "role": "user",
+                "content": prompt
+            })
+
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": answer
+            })
+
+        except Exception as e:
+            st.error("Pixi এখন উত্তর দিতে পারছে না। একটু পরে আবার চেষ্টা করুন।")
+            st.caption(str(e))
+            Exception as e:
                 st.error("সমস্যা হয়েছে। Gemini API Key ও Model Access পরীক্ষা করুন।")
                 st.caption(str(e))
